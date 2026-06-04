@@ -1,0 +1,249 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =============================================================================
+// NEXTAUTH — Tablas requeridas por Auth.js (NextAuth v5)
+// Ref: https://authjs.dev/getting-started/adapters/prisma
+// =============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?   @db.VarChar(100)
+  email         String?   @unique @db.VarChar(150)
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?   @db.VarChar(255)
+
+  // Campos extra del negocio
+  telefono      String?   @db.VarChar(20)  // Para envío por WhatsApp
+  estado        Boolean   @default(true)   // Cuenta activa/desactivada
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+
+  // Relaciones NextAuth
+  accounts      Account[]
+  sessions      Session[]
+
+  // Relaciones del negocio
+  facturas      Factura[]
+  envios        Envio[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// =============================================================================
+// CATÁLOGOS
+// =============================================================================
+
+/// Categorías de gasto: Alimentación, Transporte, Salud, etc.
+model CategoriaGasto {
+  id          Int      @id @default(autoincrement())
+  nombre      String   @db.VarChar(100)
+  descripcion String?  @db.Text
+  icono       String?  @db.VarChar(50)  // Nombre del icono o emoji
+  color       String?  @db.VarChar(20)  // Color HEX para el dashboard (ej: #22c55e)
+  activa      Boolean  @default(true)
+
+  facturas    Factura[]
+
+  @@map("categorias_gasto")
+}
+
+/// Tipos de documento fiscal: FACTURA, RECIBO, TICKET, OTROS
+model TipoDocumento {
+  id     Int     @id @default(autoincrement())
+  nombre String  @db.VarChar(50)  // FACTURA | RECIBO | TICKET | OTROS
+
+  facturas Factura[]
+
+  @@map("tipos_documento")
+}
+
+/// Catálogo de proveedores (el usuario también puede ingresar texto libre)
+model Proveedor {
+  id         Int      @id @default(autoincrement())
+  nombre     String   @db.VarChar(200)
+  rtn        String?  @db.VarChar(20)  // RTN Honduras u otro identificador fiscal
+  created_at DateTime @default(now())
+
+  facturas   Factura[]
+
+  @@map("proveedores")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+/// Clasifica si el documento representa un ingreso o un gasto
+enum TipoMovimiento {
+  INGRESO
+  GASTO
+}
+
+/// Ciclo de vida de la factura dentro del sistema
+enum EstadoFactura {
+  BORRADOR  // Subida pero sin datos confirmados
+  COMPLETA  // Datos revisados y confirmados por el usuario
+  ENVIADA   // Incluida en un envío al contador/a
+}
+
+enum EstadoEnvio {
+  PENDIENTE
+  ENVIADO
+  FALLIDO
+}
+
+enum MedioEnvio {
+  WHATSAPP
+  EMAIL
+  OTRO
+}
+
+// =============================================================================
+// FACTURA — Entidad central del sistema
+// =============================================================================
+
+model Factura {
+  id              String          @id @default(cuid())
+
+  // Propietario
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Clasificación
+  categoriaId     Int?
+  categoria       CategoriaGasto? @relation(fields: [categoriaId], references: [id])
+
+  tipoDocumentoId Int?
+  tipoDocumento   TipoDocumento?  @relation(fields: [tipoDocumentoId], references: [id])
+
+  // Proveedor: relación al catálogo (opcional) o texto libre
+  proveedorId     Int?
+  proveedor       Proveedor?      @relation(fields: [proveedorId], references: [id])
+  proveedorTexto  String?         @db.VarChar(200) // Texto libre si no está en catálogo
+
+  // Datos de la factura
+  fecha           DateTime?       @db.Date
+  monto           Decimal         @db.Decimal(10, 2)
+  moneda          String          @default("HNL") @db.VarChar(5) // ISO 4217: HNL, USD, etc.
+  numeroFactura   String?         @db.VarChar(100)
+  facturaFisica   Boolean         @default(false)  // true = física, false = digital
+  tipoMovimiento  TipoMovimiento  @default(GASTO)
+
+  // Archivo adjunto
+  archivoUrl      String?         @db.VarChar(500) // URL en Vercel Blob / S3
+  archivoTipo     String?         @db.VarChar(20)  // "image/jpeg" | "application/pdf"
+
+  // Control OCR
+  datosConfirmados Boolean        @default(false)  // El usuario revisó los datos del OCR
+  ocrRaw           Json?                           // Respuesta cruda del OCR (depuración)
+
+  // Índices de período (facilita filtros por mes)
+  mes             Int?                             // 1–12
+  anio            Int?                             // ej: 2025
+
+  observaciones   String?         @db.Text
+  estado          EstadoFactura   @default(BORRADOR)
+
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  // Relación con envíos (tabla pivote)
+  envioFacturas   EnvioFactura[]
+
+  @@index([userId])
+  @@index([userId, mes, anio]) // Consulta frecuente: facturas del mes del usuario
+  @@map("facturas")
+}
+
+// =============================================================================
+// ENVIO — Registro de envíos mensuales al contador/a
+// =============================================================================
+
+/// Cabecera del envío mensual
+model Envio {
+  id                String      @id @default(cuid())
+
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  destinatario      String      @db.VarChar(200) // Nombre/correo/teléfono de la contadora
+  medioEnvio        MedioEnvio
+  estado            EstadoEnvio @default(PENDIENTE)
+
+  // Período enviado
+  mes               Int?        // 1–12
+  anio              Int?
+
+  // Archivo generado para compartir (PDF resumen o ZIP)
+  archivoResumenUrl String?     @db.VarChar(500)
+
+  // Facturas incluidas (tabla pivote)
+  envioFacturas     EnvioFactura[]
+
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+
+  @@map("envios")
+}
+
+/// Tabla pivote N:M — relaciona cada Envio con sus Facturas
+model EnvioFactura {
+  id        String  @id @default(cuid())
+
+  envioId   String
+  envio     Envio   @relation(fields: [envioId], references: [id], onDelete: Cascade)
+
+  facturaId String
+  factura   Factura @relation(fields: [facturaId], references: [id], onDelete: Cascade)
+
+  @@unique([envioId, facturaId]) // Evita duplicados en el mismo envío
+  @@map("envio_facturas")
+}
