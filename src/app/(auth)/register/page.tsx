@@ -1,201 +1,243 @@
-// app/(auth)/register/page.tsx
+// src/app/(auth)/register/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Image from "next/image";
-import { toast } from "sonner";
 import { registerSchema, type RegisterInput } from "@/lib/validations/auth";
 import { registerUser } from "@/lib/actions/auth.actions";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import { PasswordStrength } from "@/components/ui/PasswordStrength";
-import { CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, ArrowRight, Loader2, ShieldCheck, Zap, BarChart3 } from "lucide-react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isSubmitting },
-  } = useForm<RegisterInput>({
+  const { register, handleSubmit, watch, formState: { errors } } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
   });
 
-  const passwordValue = watch("password", "");
+  const password = watch("password", "");
 
-  const onSubmit = async (data: RegisterInput) => {
-    setServerError(null);
-    const result = await registerUser(data);
-
-    if (!result.success) {
-      setServerError(result.error);
-      return;
-    }
-
-    setSuccess(true);
-    toast.success("¡Cuenta creada! Redirigiendo...");
-    setTimeout(() => router.push("/login"), 2000);
+  const getStrength = (p: string) => {
+    let s = 0;
+    if (p.length >= 8) s++;
+    if (/[A-Z]/.test(p)) s++;
+    if (/[0-9]/.test(p)) s++;
+    if (/[^A-Za-z0-9]/.test(p)) s++;
+    return s;
   };
+  const strength = getStrength(password);
+  const strengthColors = ["#E2E8F0", "#EF4444", "#F59E0B", "#1A9FB4", "#10B981"];
+  const strengthLabels = ["", "Débil", "Regular", "Buena", "Fuerte"];
+
+  async function onSubmit(data: RegisterInput) {
+    startTransition(async () => {
+      try {
+        await registerUser(data);
+        toast.success("Cuenta creada. Inicia sesión.");
+        router.push("/login");
+      } catch (e: any) {
+        toast.error(e?.message ?? "Error al registrar");
+      }
+    });
+  }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-[#F4F6F9] px-4 py-10">
-      {/* Fondo decorativo */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-[0.06]"
-          style={{ background: "radial-gradient(circle, #1A9FB4, #0B2D52)" }}
-        />
-        <div
-          className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full opacity-[0.05]"
-          style={{ background: "radial-gradient(circle, #0B2D52, #1A9FB4)" }}
-        />
-      </div>
+    <div className="min-h-screen flex" style={{ fontFamily: "DM Sans, sans-serif" }}>
 
-      <div className="relative w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl shadow-[#0B2D52]/8 border border-[#E2E8F0] px-8 py-10">
+      {/* ── LEFT PANEL ── */}
+      <div
+        className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-14 relative overflow-hidden"
+        style={{ background: "linear-gradient(160deg, #061A30 0%, #0B2D52 60%, #0e3a6a 100%)" }}
+      >
+        <div className="absolute top-[-100px] right-[-100px] w-96 h-96 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #1A9FB4, transparent)" }} />
+        <div className="absolute bottom-[-80px] left-[-80px] w-80 h-80 rounded-full opacity-10 pointer-events-none"
+          style={{ background: "radial-gradient(circle, #1A9FB4, transparent)" }} />
 
-          {/* Logo */}
-          <div className="flex flex-col items-center gap-3 mb-8">
-            <Image
-              src="/assets/logofactosai.png"
-              alt="FactosAI"
-              width={120}
-              height={40}
-              className="object-contain"
-              priority
-            />
-            <div className="text-center">
-              <h1 className="text-2xl font-bold text-[#0B2D52]">Crea tu cuenta</h1>
-              <p className="text-sm text-[#94A3B8] mt-1">
-                Empieza a organizar tus facturas con IA
-              </p>
-            </div>
+        <div className="w-full max-w-md">
+          <div className="rounded-2xl overflow-hidden shadow-2xl mb-10"
+            style={{ width: 90, height: 90, background: "#fff", padding: 10 }}>
+            <Image src="/assets/logofactosai.png" alt="FactosAI" width={70} height={70}
+              className="object-contain w-full h-full" priority />
           </div>
 
-          {/* Success state */}
-          {success && (
-            <div className="mb-5 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 flex items-center gap-3 text-sm text-emerald-700">
-              <CheckCircle2 size={18} className="shrink-0" />
-              ¡Cuenta creada exitosamente! Redirigiendo al login...
-            </div>
-          )}
-
-          {/* Server error */}
-          {serverError && (
-            <div className="mb-5 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600 flex items-center gap-2">
-              <span>⚠</span> {serverError}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-            {/* Nombre y Apellido en fila */}
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="Nombre"
-                type="text"
-                placeholder="Carlos"
-                autoComplete="given-name"
-                error={errors.nombre?.message}
-                {...register("nombre")}
-              />
-              <Input
-                label="Apellido"
-                type="text"
-                placeholder="Rodríguez"
-                autoComplete="family-name"
-                error={errors.apellido?.message}
-                {...register("apellido")}
-              />
-            </div>
-
-            <Input
-              label="Correo electrónico"
-              type="email"
-              placeholder="tu@correo.com"
-              autoComplete="email"
-              error={errors.email?.message}
-              {...register("email")}
-            />
-
-            <Input
-              label="Teléfono (opcional)"
-              type="tel"
-              placeholder="+504 9999-9999"
-              autoComplete="tel"
-              error={errors.telefono?.message}
-              hint="Para recibir notificaciones por WhatsApp"
-              {...register("telefono")}
-            />
-
-            <div>
-              <Input
-                label="Contraseña"
-                type="password"
-                placeholder="Mínimo 8 caracteres"
-                autoComplete="new-password"
-                error={errors.password?.message}
-                {...register("password")}
-              />
-              <PasswordStrength password={passwordValue} />
-            </div>
-
-            <Input
-              label="Confirmar contraseña"
-              type="password"
-              placeholder="Repite tu contraseña"
-              autoComplete="new-password"
-              error={errors.confirmPassword?.message}
-              {...register("confirmPassword")}
-            />
-
-            {/* Requisitos */}
-            <ul className="grid grid-cols-2 gap-1 text-xs text-[#94A3B8]">
-              {[
-                { re: /.{8,}/, label: "8 caracteres mín." },
-                { re: /[A-Z]/, label: "Una mayúscula" },
-                { re: /[0-9]/, label: "Un número" },
-                { re: /[^A-Za-z0-9]/, label: "Un símbolo" },
-              ].map(({ re, label }) => (
-                <li key={label} className="flex items-center gap-1.5">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full transition-colors ${
-                      re.test(passwordValue) ? "bg-[#10B981]" : "bg-[#E2E8F0]"
-                    }`}
-                  />
-                  {label}
-                </li>
-              ))}
-            </ul>
-
-            <Button type="submit" loading={isSubmitting} disabled={success} className="mt-2">
-              Crear cuenta
-            </Button>
-          </form>
-
-          {/* Login link */}
-          <p className="text-center text-sm text-[#94A3B8] mt-6">
-            ¿Ya tienes cuenta?{" "}
-            <Link
-              href="/login"
-              className="font-semibold text-[#0B2D52] hover:text-[#1A9FB4] transition-colors"
-            >
-              Iniciar sesión
-            </Link>
+          <h1 className="font-bold mb-4" style={{ fontSize: 42, letterSpacing: "-0.02em", lineHeight: "1.1", color: "#7EC8D8" }}>
+            Comienza hoy<br />sin costo
+          </h1>
+          <p className="mb-12" style={{ color: "rgba(255,255,255,0.55)", fontSize: 17, lineHeight: 1.7, maxWidth: 360 }}>
+            Crea tu cuenta en segundos y empieza a gestionar tus facturas de forma inteligente.
           </p>
+
+          <div className="space-y-3">
+            {[
+              { icon: ShieldCheck, label: "Seguro y encriptado",   desc: "Tus datos protegidos con cifrado de nivel bancario" },
+              { icon: Zap,         label: "Gestión inteligente",   desc: "Clasifica facturas automáticamente por categoría" },
+              { icon: BarChart3,   label: "Reportes mensuales",    desc: "Genera y envía resúmenes a tu contadora en segundos" },
+            ].map(({ icon: Icon, label, desc }) => (
+              <div key={label} className="flex items-center gap-4 p-4 rounded-2xl"
+                style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)" }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: "rgba(26,159,180,0.2)" }}>
+                  <Icon size={20} style={{ color: "#1A9FB4" }} />
+                </div>
+                <div>
+                  <p className="font-semibold text-white" style={{ fontSize: 15 }}>{label}</p>
+                  <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13 }}>{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
-        <p className="text-center text-xs text-[#94A3B8] mt-5">
-          © {new Date().getFullYear()} FactosAI · Plataforma segura de gestión contable
+        <p className="absolute bottom-6 left-14 text-xs" style={{ color: "rgba(255,255,255,0.2)" }}>
+          © 2026 FactosAI · Todos los derechos reservados
         </p>
       </div>
-    </main>
+
+      {/* ── RIGHT PANEL ── */}
+      <div className="flex-1 flex flex-col justify-center items-center px-8 md:px-16 py-12"
+        style={{ background: "#fff" }}>
+
+        {/* Mobile logo */}
+        <div className="flex lg:hidden items-center gap-3 mb-10 self-start">
+          <div className="rounded-xl overflow-hidden"
+            style={{ width: 44, height: 44, background: "#fff", padding: 4, border: "1.5px solid var(--border)" }}>
+            <Image src="/assets/logofactosai.png" alt="FactosAI" width={36} height={36} className="object-contain w-full h-full" />
+          </div>
+          <span className="font-bold text-lg" style={{ color: "var(--navy)" }}>FactosAI</span>
+        </div>
+
+        <div className="w-full" style={{ maxWidth: 460 }}>
+          <h2 className="font-bold mb-1" style={{ color: "var(--charcoal)", fontSize: 30, letterSpacing: "-0.01em" }}>
+            Crear cuenta
+          </h2>
+          <p className="mb-8" style={{ color: "var(--muted)", fontSize: 16 }}>
+            Completa los datos para comenzar
+          </p>
+
+          {/* Tabs */}
+          <div className="flex gap-8 mb-8 border-b" style={{ borderColor: "var(--border)" }}>
+            <Link href="/login"
+              className="pb-3 font-medium"
+              style={{ color: "var(--muted)", fontSize: 16, borderBottom: "2.5px solid transparent" }}>
+              Ingresar
+            </Link>
+            <button className="pb-3 font-bold"
+              style={{ color: "var(--charcoal)", fontSize: 16, borderBottom: "2.5px solid var(--cyan)" }}>
+              Registro
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Nombre */}
+            <div>
+              <label className="block font-semibold mb-2" style={{ color: "var(--charcoal)", fontSize: 15 }}>
+                Nombre completo
+              </label>
+              <input
+                {...register("nombre")}
+                type="text"
+                placeholder="Carlos Rodríguez"
+                className="w-full rounded-xl px-5 transition-all focus:outline-none"
+                style={{
+                  height: 54, fontSize: 16,
+                  border: errors.nombre ? "1.5px solid var(--danger)" : "1.5px solid var(--border)",
+                  background: "var(--off-white)", color: "var(--charcoal)",
+                }}
+              />
+              {errors.nombre && <p className="text-sm mt-1.5" style={{ color: "var(--danger)" }}>{errors.nombre.message}</p>}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className="block font-semibold mb-2" style={{ color: "var(--charcoal)", fontSize: 15 }}>
+                Correo Electrónico
+              </label>
+              <input
+                {...register("email")}
+                type="email"
+                placeholder="nombre@factos.ai"
+                className="w-full rounded-xl px-5 transition-all focus:outline-none"
+                style={{
+                  height: 54, fontSize: 16,
+                  border: errors.email ? "1.5px solid var(--danger)" : "1.5px solid var(--border)",
+                  background: "var(--off-white)", color: "var(--charcoal)",
+                }}
+              />
+              {errors.email && <p className="text-sm mt-1.5" style={{ color: "var(--danger)" }}>{errors.email.message}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="block font-semibold mb-2" style={{ color: "var(--charcoal)", fontSize: 15 }}>
+                Contraseña
+              </label>
+              <div className="relative">
+                <input
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  className="w-full rounded-xl px-5 pr-14 transition-all focus:outline-none"
+                  style={{
+                    height: 54, fontSize: 16,
+                    border: errors.password ? "1.5px solid var(--danger)" : "1.5px solid var(--border)",
+                    background: "var(--off-white)", color: "var(--charcoal)",
+                  }}
+                />
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2" style={{ color: "var(--muted)" }}>
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+              {errors.password && <p className="text-sm mt-1.5" style={{ color: "var(--danger)" }}>{errors.password.message}</p>}
+
+              {password.length > 0 && (
+                <div className="mt-3">
+                  <div className="flex gap-1.5 mb-1.5">
+                    {[1,2,3,4].map((i) => (
+                      <div key={i} className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                        style={{ background: i <= strength ? strengthColors[strength] : "var(--border)" }} />
+                    ))}
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-wider" style={{ color: strengthColors[strength] }}>
+                    {strengthLabels[strength]}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isPending}
+              className="w-full flex items-center justify-center gap-3 rounded-xl font-bold text-white transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-60"
+              style={{
+                height: 56, fontSize: 17,
+                background: "linear-gradient(135deg, #006877 0%, #1A9FB4 100%)",
+                boxShadow: "0 4px 20px rgba(26,159,180,0.4)",
+                marginTop: 8,
+              }}
+            >
+              {isPending
+                ? <Loader2 size={20} className="animate-spin" />
+                : <><span>Crear mi cuenta</span><ArrowRight size={20} /></>
+              }
+            </button>
+
+            <p className="text-sm text-center" style={{ color: "var(--muted)" }}>
+              Al continuar, aceptas nuestros{" "}
+              <span style={{ color: "var(--cyan)", cursor: "pointer" }}>Términos de Servicio</span>{" "}
+              y <span style={{ color: "var(--cyan)", cursor: "pointer" }}>Privacidad</span>.
+            </p>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }

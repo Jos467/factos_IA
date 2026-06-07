@@ -119,32 +119,30 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
   };
 
   return (
-    <div className="flex-1 p-8 max-w-3xl mx-auto w-full">
+    <div className="flex-1 p-6 md:p-12 max-w-4xl mx-auto w-full">
       <Link
         href="/facturas"
-        className="inline-flex items-center gap-2 text-sm mb-6 transition-colors"
-        style={{ color: "var(--muted)" }}
+        className="inline-flex items-center gap-2 text-sm mb-8 font-medium text-slate-400 hover:text-navy transition-all hover:-translate-x-1"
       >
-        <ArrowLeft size={16} /> Volver a facturas
+        <ArrowLeft size={18} /> Volver a facturas
       </Link>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-10">
 
         {/* Archivo + OCR */}
-        <div className="card p-6">
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="font-semibold" style={{ color: "var(--navy)" }}>
+        <div className="card p-8 rounded-3xl shadow-premium border border-slate-100 bg-white">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-navy">
               Archivo de la factura
             </h2>
             <span
-              className="flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full"
-              style={{ background: "var(--cyan-muted)", color: "var(--cyan)" }}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-cyan-muted text-cyan uppercase tracking-wider"
             >
               <Sparkles size={10} /> IA
             </span>
           </div>
-          <p className="text-sm mb-4" style={{ color: "var(--muted)" }}>
-            Sube la imagen o PDF — la IA llenará los campos automáticamente
+          <p className="text-slate-500 text-sm mb-6">
+            Sube la imagen o PDF para que nuestra IA detecte los datos automáticamente.
           </p>
           {session?.user?.id && (
             <FileUpload
@@ -162,33 +160,34 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
         {/* Banner si OCR fue usado */}
         {ocrUsado && (
           <div
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-            style={{ background: "#eff6ff", border: "1px solid #bfdbfe" }}
+            className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-blue-50 border border-blue-100 shadow-sm"
           >
-            <Sparkles size={16} style={{ color: "#3b82f6" }} />
-            <span style={{ color: "#1e40af" }}>
+            <Sparkles size={20} className="text-blue-500" />
+            <span className="text-blue-800 font-medium text-sm">
               Campos pre-llenados por IA — revisa y corrige antes de guardar
             </span>
           </div>
         )}
 
         {/* Datos principales */}
-        <div className="card p-6">
-          <h2 className="font-semibold mb-4" style={{ color: "var(--navy)" }}>
+        <div className="card p-8 rounded-3xl shadow-premium border border-slate-100 bg-white">
+          <h2 className="text-xl font-bold mb-8 text-navy">
             Datos de la factura
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
             <Input
               label="Proveedor *"
               type="text"
               placeholder="Nombre del proveedor o tienda"
               error={errors.proveedorTexto?.message}
+              className="h-12"
               {...register("proveedorTexto")}
             />
             <Input
               label="Fecha *"
               type="date"
               error={errors.fecha?.message}
+              className="h-12"
               {...register("fecha")}
             />
             <Input
@@ -197,15 +196,13 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
               step="0.01"
               placeholder="0.00"
               error={errors.monto?.message}
+              className="h-12"
               {...register("monto")}
             />
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: "var(--charcoal)" }}>
-                Moneda
-              </label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Moneda</label>
               <select
-                className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                style={{ borderColor: "var(--border)", color: "var(--charcoal)" }}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-navy/5 focus:border-navy transition-all appearance-none bg-slate-50/50"
                 {...register("moneda")}
               >
                 <option value="HNL">HNL — Lempira</option>
@@ -216,19 +213,14 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
         </div>
 
         {/* Clasificación */}
-        <div className="card p-6">
-          <h2 className="font-semibold mb-4" style={{ color: "var(--navy)" }}>
+        <div className="card p-8 rounded-3xl shadow-premium border border-slate-100 bg-white">
+          <h2 className="text-xl font-bold mb-8 text-navy">
             Clasificación
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: "var(--charcoal)" }}>
-                Categoría
-              </label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Categoría</label>
               <select
-                className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                style={{ borderColor: "var(--border)", color: "var(--charcoal)" }}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-navy/5 focus:border-navy transition-all appearance-none bg-slate-50/50"
                 {...register("categoriaId")}
               >
                 <option value="">Sin categoría</option>
@@ -240,13 +232,10 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: "var(--charcoal)" }}>
-                Tipo de documento
-              </label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Tipo de documento</label>
               <select
-                className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                style={{ borderColor: "var(--border)", color: "var(--charcoal)" }}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-navy/5 focus:border-navy transition-all appearance-none bg-slate-50/50"
                 {...register("tipoDocumentoId")}
               >
                 <option value="">Sin tipo</option>
@@ -256,13 +245,10 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
               </select>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium" style={{ color: "var(--charcoal)" }}>
-                Tipo de movimiento
-              </label>
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-bold text-slate-700 ml-1">Tipo de movimiento</label>
               <select
-                className="w-full rounded-xl border px-4 py-3 text-sm outline-none"
-                style={{ borderColor: "var(--border)", color: "var(--charcoal)" }}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3.5 text-sm outline-none focus:ring-2 focus:ring-navy/5 focus:border-navy transition-all appearance-none bg-slate-50/50"
                 {...register("tipoMovimiento")}
               >
                 <option value="GASTO">Gasto</option>
@@ -275,55 +261,48 @@ export function NuevaFacturaForm({ categorias, tiposDocumento }: Props) {
               type="text"
               placeholder="Ej: 001-002-00123456"
               error={errors.numeroFactura?.message}
+              className="h-12"
               {...register("numeroFactura")}
             />
 
-            <div className="flex items-center gap-3 col-span-full">
+            <div className="flex items-center gap-4 col-span-full bg-slate-50 p-4 rounded-2xl border border-slate-100 mt-2">
               <input
                 type="checkbox"
                 id="facturaFisica"
-                className="w-4 h-4 rounded"
-                style={{ accentColor: "var(--navy)" }}
+                className="w-5 h-5 rounded-lg border-slate-300 text-navy focus:ring-navy transition-all cursor-pointer accent-navy"
                 {...register("facturaFisica")}
               />
               <label
                 htmlFor="facturaFisica"
-                className="text-sm font-medium cursor-pointer"
-                style={{ color: "var(--charcoal)" }}
+                className="text-sm font-bold cursor-pointer text-slate-700"
               >
                 Es una factura física (documento impreso)
               </label>
             </div>
           </div>
-        </div>
 
         {/* Observaciones */}
-        <div className="card p-6">
-          <h2 className="font-semibold mb-4" style={{ color: "var(--navy)" }}>
+        <div className="card p-8 rounded-3xl shadow-premium border border-slate-100 bg-white">
+          <h2 className="text-xl font-bold mb-6 text-navy">
             Observaciones
           </h2>
           <textarea
             placeholder="Notas adicionales sobre esta factura..."
-            rows={3}
-            className="w-full rounded-xl border px-4 py-3 text-sm outline-none resize-none"
-            style={{
-              borderColor: "var(--border)",
-              color: "var(--charcoal)",
-              fontFamily: "inherit",
-            }}
+            rows={4}
+            className="w-full rounded-2xl border border-slate-200 px-5 py-4 text-sm outline-none resize-none focus:ring-2 focus:ring-navy/5 focus:border-navy transition-all bg-slate-50/50 text-charcoal font-sans"
             {...register("observaciones")}
           />
         </div>
 
         {/* Acciones */}
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-4 mt-4 mb-12">
           <Link href="/facturas" className="flex-1">
-            <Button type="button" variant="secondary" className="w-full">
+            <Button type="button" variant="secondary" className="w-full h-16 text-base font-bold rounded-2xl shadow-sm hover:bg-slate-100 transition-all active:scale-[0.98]">
               Cancelar
             </Button>
           </Link>
           <div className="flex-1">
-            <Button type="submit" loading={isSubmitting} className="w-full">
+            <Button type="submit" loading={isSubmitting} className="w-full h-16 text-base font-bold rounded-2xl shadow-button bg-navy hover:bg-navy-light text-white transition-all active:scale-[0.98]">
               Guardar factura
             </Button>
           </div>

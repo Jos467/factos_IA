@@ -10,6 +10,7 @@ import {
   FileText,
   Tag,
   BarChart3,
+  Send,
   LogOut,
   ChevronRight,
 } from "lucide-react";
@@ -17,8 +18,9 @@ import {
 const NAV_ITEMS = [
   { href: "/dashboard",    label: "Inicio",      icon: LayoutDashboard },
   { href: "/facturas",     label: "Facturas",    icon: FileText },
-  { href: "/categorias",   label: "Categorías",  icon: Tag },
+
   { href: "/reportes",     label: "Reportes",    icon: BarChart3 },
+  { href: "/envios",     label: "Envíos",      icon: Send },
 ];
 
 export function Sidebar() {
