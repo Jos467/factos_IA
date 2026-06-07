@@ -6,7 +6,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { eliminarFactura } from "@/lib/actions/factura.actions";
 import { FileText, Eye, Pencil, Trash2, Plus } from "lucide-react";
-import type { Factura, CategoriaGasto, TipoDocumento } from "../../../generated/prisma";
+import type { Factura, CategoriaGasto, TipoDocumento } from "@prisma/client";
 
 type FacturaConRelaciones = Omit<Factura, "monto" | "fecha" | "created_at" | "updated_at"> & {
   monto:         number;

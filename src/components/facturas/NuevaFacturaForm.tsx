@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { FileUpload } from "@/components/facturas/FileUpload";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import Link from "next/link";
-import type { CategoriaGasto, TipoDocumento } from "../../../generated/prisma";
+import type { CategoriaGasto, TipoDocumento } from "@prisma/client";
 import type { DatosFacturaOCR } from "@/lib/services/ocr";
 
 interface Props {

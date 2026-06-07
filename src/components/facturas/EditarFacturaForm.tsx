@@ -10,7 +10,11 @@ import { actualizarFactura } from "@/lib/actions/factura.actions";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
-import type { Factura, CategoriaGasto, TipoDocumento } from "../../../generated/prisma";
+import type {
+  Factura,
+  CategoriaGasto,
+  TipoDocumento
+} from "@prisma/client";
 
 interface Props {
   factura: Factura;

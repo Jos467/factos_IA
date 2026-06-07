@@ -2,7 +2,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { CategoriaGasto } from "../../../generated/prisma";
+import type { CategoriaGasto } from "@prisma/client";
 
 interface Props {
   mesActual: number;
