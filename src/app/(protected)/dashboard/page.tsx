@@ -85,12 +85,14 @@ export default async function DashboardPage() {
   const balance       = totalIngresos - totalGastos;
 
   // Enriquecer categorías
-  const categoriasIds = porCategoria.map(c => c.categoriaId).filter(Boolean) as number[];
+  const categoriasIds = porCategoria
+  .map((c: any) => c.categoriaId)
+  .filter(Boolean) as number[];
   const categoriasData = await prisma.categoriaGasto.findMany({ where: { id: { in: categoriasIds } } });
   const catMap = Object.fromEntries(categoriasData.map(c => [c.id, c]));
 
   const porCategoriaChart = porCategoria
-    .map(c => ({
+  .map((c: any) => ({
       nombre: c.categoriaId ? (catMap[c.categoriaId]?.nombre ?? "Sin categoría") : "Sin categoría",
       icono:  c.categoriaId ? (catMap[c.categoriaId]?.icono  ?? "📦") : "📦",
       color:  c.categoriaId ? (catMap[c.categoriaId]?.color  ?? "#94A3B8") : "#94A3B8",
